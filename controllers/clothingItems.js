@@ -1,48 +1,40 @@
 const ClothingItem = require("../models/clothingItem");
+const { BAD_REQUEST, NOT_FOUND, DEFAULT } = require("../utils/errors");
 
-const createClothingItem = async (req, res) => {
+// Common error handler
+const handleError = (err, res) => {
+  console.error(err);
+
+  if (err.name === "ValidationError") {
+    return res.status(BAD_REQUEST).send({ message: err.message });
+  }
+
+  if (err.name === "CastError") {
+    return res.status(BAD_REQUEST).send({ message: "Invalid ID format" });
+  }
+
+  return res
+    .status(DEFAULT)
+    .send({ message: "An error has occurred on the server" });
+};
+
+// Create a clothing item
+const createClothingItem = (req, res) => {
   const { name, weather, imageUrl } = req.body;
 
   ClothingItem.create({ name, weather, imageUrl })
     .then((item) => res.status(201).send(item))
-    .catch((err) => {
-      console.error(err);
-      if (err.name === "ValidationError") {
-        return res.status(400).send({ message: err.message });
-      }
-      return res.status(500).send({ message: err.message });
-    });
+    .catch((err) => handleError(err, res));
 };
 
+// Get all items
 const getItems = (req, res) => {
   ClothingItem.find({})
     .then((items) => res.status(200).send(items))
-    .catch((err) => {
-      console.error(err);
-      return res.status(500).send({ message: err.message });
-    });
+    .catch((err) => handleError(err, res));
 };
 
-const updateItem = (req, res) => {
-  const { itemId } = req.params;
-  const { imageUrl } = req.body;
-
-  ClothingItem.findByIdAndUpdate(itemId, { $set: { imageUrl } }, { new: true })
-    .orFail(() => {
-      const err = new Error("Item not found");
-      err.name = "DocumentNotFoundError";
-      throw err;
-    })
-    .then((item) => res.status(200).send(item))
-    .catch((err) => {
-      console.error(err);
-      if (err.name === "DocumentNotFoundError") {
-        return res.status(404).send({ message: "Item not found" });
-      }
-      return res.status(500).send({ message: err.message });
-    });
-};
-
+// Delete an item
 const deleteItem = (req, res) => {
   const { itemId } = req.params;
 
@@ -54,17 +46,65 @@ const deleteItem = (req, res) => {
     })
     .then(() => res.status(204).send())
     .catch((err) => {
-      console.error(err);
       if (err.name === "DocumentNotFoundError") {
-        return res.status(404).send({ message: "Item not found" });
+        return res.status(NOT_FOUND).send({ message: "Item not found" });
       }
-      return res.status(500).send({ message: err.message });
+      return handleError(err, res);
+    });
+};
+
+// Like an item
+const likeItem = (req, res) => {
+  const { itemId } = req.params;
+  const userId = req.user._id;
+
+  ClothingItem.findByIdAndUpdate(
+    itemId,
+    { $addToSet: { likes: userId } },
+    { new: true }
+  )
+    .orFail(() => {
+      const err = new Error("Item not found");
+      err.name = "DocumentNotFoundError";
+      throw err;
+    })
+    .then((item) => res.status(200).send(item))
+    .catch((err) => {
+      if (err.name === "DocumentNotFoundError") {
+        return res.status(NOT_FOUND).send({ message: "Item not found" });
+      }
+      return handleError(err, res);
+    });
+};
+
+// Dislike an item
+const dislikeItem = (req, res) => {
+  const { itemId } = req.params;
+  const userId = req.user._id;
+
+  ClothingItem.findByIdAndUpdate(
+    itemId,
+    { $pull: { likes: userId } },
+    { new: true }
+  )
+    .orFail(() => {
+      const err = new Error("Item not found");
+      err.name = "DocumentNotFoundError";
+      throw err;
+    })
+    .then((item) => res.status(200).send(item))
+    .catch((err) => {
+      if (err.name === "DocumentNotFoundError") {
+        return res.status(NOT_FOUND).send({ message: "Item not found" });
+      }
+      return handleError(err, res);
     });
 };
 
 module.exports = {
   createClothingItem,
   getItems,
-  updateItem,
   deleteItem,
+  likeItem,
+  dislikeItem,
 };
