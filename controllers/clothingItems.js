@@ -21,8 +21,9 @@ const handleError = (err, res) => {
 // Create a clothing item
 const createClothingItem = (req, res) => {
   const { name, weather, imageUrl } = req.body;
+  const owner = req.user._id;
 
-  ClothingItem.create({ name, weather, imageUrl })
+  ClothingItem.create({ name, weather, imageUrl, owner })
     .then((item) => res.status(201).send(item))
     .catch((err) => handleError(err, res));
 };
@@ -44,7 +45,12 @@ const deleteItem = (req, res) => {
       err.name = "DocumentNotFoundError";
       throw err;
     })
-    .then(() => res.status(204).send())
+    .then((deletedItem) =>
+      res.status(200).send({
+        message: "Item successfully deleted",
+        item: deletedItem,
+      })
+    )
     .catch((err) => {
       if (err.name === "DocumentNotFoundError") {
         return res.status(NOT_FOUND).send({ message: "Item not found" });

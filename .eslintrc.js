@@ -6,10 +6,10 @@ module.exports = {
   extends: ["eslint:recommended", "airbnb-base", "prettier"],
   overrides: [
     {
+      files: [".eslintrc.{js,cjs}"],
       env: {
         node: true,
       },
-      files: [".eslintrc.{js,cjs}"],
       parserOptions: {
         sourceType: "script",
       },
@@ -23,7 +23,11 @@ module.exports = {
     "no-console": "off",
     "no-underscore-dangle": [
       "error",
-      { allow: ["_id"], allowAfterThis: true, allowAfterSuper: true },
+      {
+        allow: ["_id"],
+        allowAfterThis: true,
+        allowAfterSuper: true,
+      },
     ],
   },
 };
