@@ -1,5 +1,10 @@
 const ClothingItem = require("../models/clothingItem");
-const { BAD_REQUEST, NOT_FOUND, DEFAULT } = require("../utils/errors");
+const {
+  BAD_REQUEST,
+  NOT_FOUND,
+  DEFAULT,
+  FORBIDDEN,
+} = require("../utils/errors");
 
 // Common error handler
 const handleError = (err, res) => {
@@ -35,22 +40,31 @@ const getItems = (req, res) => {
     .catch((err) => handleError(err, res));
 };
 
-// Delete an item
+// Delete an item (with ownership check)
 const deleteItem = (req, res) => {
   const { itemId } = req.params;
+  const userId = req.user._id;
 
-  ClothingItem.findByIdAndDelete(itemId)
+  ClothingItem.findById(itemId)
     .orFail(() => {
       const err = new Error("Item not found");
       err.name = "DocumentNotFoundError";
       throw err;
     })
-    .then((deletedItem) =>
-      res.status(200).send({
-        message: "Item successfully deleted",
-        item: deletedItem,
-      })
-    )
+    .then((item) => {
+      if (item.owner.toString() !== userId) {
+        return res
+          .status(FORBIDDEN)
+          .send({ message: "You are not allowed to delete this item" });
+      }
+
+      return item.deleteOne().then(() =>
+        res.status(200).send({
+          message: "Item successfully deleted",
+          item,
+        })
+      );
+    })
     .catch((err) => {
       if (err.name === "DocumentNotFoundError") {
         return res.status(NOT_FOUND).send({ message: "Item not found" });
