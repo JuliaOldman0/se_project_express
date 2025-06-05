@@ -13,9 +13,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, "Avatar URL is required"],
     validate: {
-      validator(value) {
-        return validator.isURL(value, { require_protocol: true });
-      },
+      validator: (value) => validator.isURL(value, { require_protocol: true }),
       message: "You must enter a valid URL with http/https",
     },
   },
@@ -24,23 +22,21 @@ const userSchema = new mongoose.Schema({
     required: [true, "Email is required"],
     unique: true,
     validate: {
-      validator(value) {
-        return validator.isEmail(value);
-      },
+      validator: (value) => validator.isEmail(value),
       message: "You must enter a valid email address",
     },
   },
   password: {
     type: String,
     required: [true, "Password is required"],
-    select: false, // ✅ Hide password from all query results
+    select: false,
   },
 });
 
-// 🔐 Static method to validate user credentials during login
+// Static method to validate user credentials during login
 userSchema.statics.findUserByCredentials = function (email, password) {
   return this.findOne({ email })
-    .select("+password") // ✅ explicitly include password
+    .select("+password")
     .then((user) => {
       if (!user) {
         return Promise.reject(new Error("Incorrect email or password"));

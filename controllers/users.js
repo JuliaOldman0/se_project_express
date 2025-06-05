@@ -6,19 +6,11 @@ const {
   NOT_FOUND,
   CONFLICT,
   BAD_REQUEST,
-  INTERNAL_SERVER_ERROR,
   UNAUTHORIZED,
   handleError,
 } = require("../utils/errors");
 
 const SALT_ROUNDS = 10;
-
-// Get all users (optional; can be removed later)
-const getUsers = (req, res) => {
-  User.find({})
-    .then((users) => res.status(200).send(users))
-    .catch((err) => handleError(err, res));
-};
 
 // Create a new user (sign up)
 const createUser = (req, res) => {
@@ -30,7 +22,7 @@ const createUser = (req, res) => {
       .send({ message: "Email and password are required." });
   }
 
-  bcrypt
+  return bcrypt
     .hash(password, SALT_ROUNDS)
     .then((hashedPassword) =>
       User.create({
@@ -42,9 +34,8 @@ const createUser = (req, res) => {
     )
     .then((user) => {
       const userData = user.toObject();
-      delete userData.password; // ✅ remove password hash before sending
-
-      res.status(201).send(userData);
+      delete userData.password;
+      return res.status(201).send(userData);
     })
     .catch((err) => {
       if (err.code === 11000) {
@@ -58,7 +49,7 @@ const createUser = (req, res) => {
 const getCurrentUser = (req, res) => {
   const userId = req.user._id;
 
-  User.findById(userId)
+  return User.findById(userId)
     .orFail(() => {
       const err = new Error("User not found");
       err.name = "DocumentNotFoundError";
@@ -78,12 +69,12 @@ const updateProfile = (req, res) => {
   const userId = req.user._id;
   const { name, avatar } = req.body;
 
-  User.findByIdAndUpdate(
+  return User.findByIdAndUpdate(
     userId,
     { name, avatar },
     {
       new: true,
-      runValidators: true, // Enables schema validation
+      runValidators: true,
     }
   )
     .orFail(() => {
@@ -107,20 +98,30 @@ const updateProfile = (req, res) => {
 const login = (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res
+      .status(BAD_REQUEST)
+      .send({ message: "Email and password are required." });
+  }
+
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
         expiresIn: "7d",
       });
-      res.send({ token });
+      return res.send({ token });
     })
-    .catch(() => {
-      res.status(UNAUTHORIZED).send({ message: "Incorrect email or password" });
+    .catch((err) => {
+      if (err.message === "Incorrect email or password") {
+        return res
+          .status(UNAUTHORIZED)
+          .send({ message: "Incorrect email or password" });
+      }
+      return handleError(err, res);
     });
 };
 
 module.exports = {
-  getUsers,
   createUser,
   getCurrentUser,
   updateProfile,

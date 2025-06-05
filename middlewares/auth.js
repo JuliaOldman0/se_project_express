@@ -13,8 +13,8 @@ module.exports = (req, res, next) => {
 
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload; // Attach user ID from token
-    next();
+    req.user = payload;
+    return next(); 
   } catch (err) {
     return res.status(UNAUTHORIZED).send({ message: "Invalid token" });
   }
