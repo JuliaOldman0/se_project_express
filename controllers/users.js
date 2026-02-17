@@ -55,7 +55,11 @@ const getCurrentUser = (req, res) => {
       err.name = "DocumentNotFoundError";
       throw err;
     })
-    .then((user) => res.status(200).send(user))
+    .then((user) => {
+      const userData = user.toObject();
+      delete userData.password;
+      return res.status(200).send(userData);
+    })
     .catch((err) => {
       if (err.name === "DocumentNotFoundError") {
         return res.status(NOT_FOUND).send({ message: "User not found" });
@@ -82,7 +86,11 @@ const updateProfile = (req, res) => {
       err.name = "DocumentNotFoundError";
       throw err;
     })
-    .then((updatedUser) => res.status(200).send(updatedUser))
+    .then((updatedUser) => {
+      const userData = updatedUser.toObject();
+      delete userData.password;
+      return res.status(200).send(userData);
+    })
     .catch((err) => {
       if (err.name === "ValidationError") {
         return res.status(BAD_REQUEST).send({ message: err.message });
