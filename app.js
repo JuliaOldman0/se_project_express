@@ -1,6 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const { errors } = require("celebrate");
+
 const mainRouter = require("./routes");
 const { createUser, login } = require("./controllers/users");
 const { getItems } = require("./controllers/clothingItems");
@@ -33,6 +35,11 @@ app.use(auth);
 
 // 🔒 Authenticated routes
 app.use("/", mainRouter);
+
+// Celebrate error handler
+app.use(errors());
+
+// Centralized error handler
 app.use(errorHandler);
 
 // Start server
