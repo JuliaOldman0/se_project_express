@@ -2,24 +2,20 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const { JWT_SECRET } = require("../utils/config");
-const {
-  NOT_FOUND,
-  CONFLICT,
-  BAD_REQUEST,
-  UNAUTHORIZED,
-  handleError,
-} = require("../utils/errors");
+
+const BadRequestError = require("../errors/bad-request-error");
+const UnauthorizedError = require("../errors/unauthorized-error");
+const NotFoundError = require("../errors/not-found-error");
+const ConflictError = require("../errors/conflict-error");
 
 const SALT_ROUNDS = 10;
 
 // Create a new user (sign up)
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
   const { name, avatar, email, password } = req.body;
 
   if (!email || !password) {
-    return res
-      .status(BAD_REQUEST)
-      .send({ message: "Email and password are required." });
+    return next(new BadRequestError("Email and password are required."));
   }
 
   return bcrypt
@@ -39,37 +35,35 @@ const createUser = (req, res) => {
     })
     .catch((err) => {
       if (err.code === 11000) {
-        return res.status(CONFLICT).send({ message: "Email already exists." });
+        return next(new ConflictError("Email already exists."));
       }
-      return handleError(err, res);
+
+      if (err.name === "ValidationError") {
+        return next(new BadRequestError(err.message));
+      }
+
+      return next(err);
     });
 };
 
 // Get current user from JWT payload
-const getCurrentUser = (req, res) => {
+const getCurrentUser = (req, res, next) => {
   const userId = req.user._id;
 
   return User.findById(userId)
     .orFail(() => {
-      const err = new Error("User not found");
-      err.name = "DocumentNotFoundError";
-      throw err;
+      throw new NotFoundError("User not found");
     })
     .then((user) => {
       const userData = user.toObject();
       delete userData.password;
       return res.status(200).send(userData);
     })
-    .catch((err) => {
-      if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: "User not found" });
-      }
-      return handleError(err, res);
-    });
+    .catch(next);
 };
 
 // Update user profile (name and avatar)
-const updateProfile = (req, res) => {
+const updateProfile = (req, res, next) => {
   const userId = req.user._id;
   const { name, avatar } = req.body;
 
@@ -82,9 +76,7 @@ const updateProfile = (req, res) => {
     }
   )
     .orFail(() => {
-      const err = new Error("User not found");
-      err.name = "DocumentNotFoundError";
-      throw err;
+      throw new NotFoundError("User not found");
     })
     .then((updatedUser) => {
       const userData = updatedUser.toObject();
@@ -93,23 +85,19 @@ const updateProfile = (req, res) => {
     })
     .catch((err) => {
       if (err.name === "ValidationError") {
-        return res.status(BAD_REQUEST).send({ message: err.message });
+        return next(new BadRequestError(err.message));
       }
-      if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: "User not found" });
-      }
-      return handleError(err, res);
+
+      return next(err);
     });
 };
 
 // Login user (sign in)
-const login = (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res
-      .status(BAD_REQUEST)
-      .send({ message: "Email and password are required." });
+    return next(new BadRequestError("Email and password are required."));
   }
 
   return User.findUserByCredentials(email, password)
@@ -121,11 +109,10 @@ const login = (req, res) => {
     })
     .catch((err) => {
       if (err.message === "Incorrect email or password") {
-        return res
-          .status(UNAUTHORIZED)
-          .send({ message: "Incorrect email or password" });
+        return next(new UnauthorizedError("Incorrect email or password"));
       }
-      return handleError(err, res);
+
+      return next(err);
     });
 };
 

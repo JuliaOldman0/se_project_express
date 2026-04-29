@@ -3,8 +3,9 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const mainRouter = require("./routes");
 const { createUser, login } = require("./controllers/users");
-const { getItems } = require("./controllers/clothingItems"); 
+const { getItems } = require("./controllers/clothingItems");
 const auth = require("./middlewares/auth");
+const errorHandler = require("./middlewares/error-handler");
 
 const { PORT = 3001 } = process.env;
 
@@ -19,19 +20,20 @@ mongoose
   .catch(console.error);
 
 // Middleware
-app.use(cors()); 
+app.use(cors());
 app.use(express.json());
 
 // ✨ Public routes
 app.post("/signup", createUser);
 app.post("/signin", login);
-app.get("/items", getItems); 
+app.get("/items", getItems);
 
 // 🔐 Protect all other routes
 app.use(auth);
 
 // 🔒 Authenticated routes
 app.use("/", mainRouter);
+app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
