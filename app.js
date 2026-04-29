@@ -8,6 +8,7 @@ const { createUser, login } = require("./controllers/users");
 const { getItems } = require("./controllers/clothingItems");
 const auth = require("./middlewares/auth");
 const errorHandler = require("./middlewares/error-handler");
+const { requestLogger, errorLogger } = require("./middlewares/logger");
 
 const { PORT = 3001 } = process.env;
 
@@ -24,6 +25,7 @@ mongoose
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(requestLogger);
 
 // ✨ Public routes
 app.post("/signup", createUser);
@@ -35,6 +37,8 @@ app.use(auth);
 
 // 🔒 Authenticated routes
 app.use("/", mainRouter);
+
+app.use(errorLogger);
 
 // Celebrate error handler
 app.use(errors());
