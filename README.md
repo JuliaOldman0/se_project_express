@@ -16,7 +16,7 @@ Backend GitHub repository: https://github.com/JuliaOldman0/se_project_express.gi
 
 ## Project Pitch Video
 
-Check out [my WTWR project pitch video](YOUR_GOOGLE_DRIVE_LINK_HERE), where I describe the project, deployment process, and challenges I faced while building it.
+Check out [my WTWR project pitch video](https://drive.google.com/file/d/1cpea-v9gWIgVGViYsA7LwNXAnouYWphe/view?usp=sharing), where I describe the project, deployment process, and challenges I faced while building it.
 
 ## ✨ Project Functionality
 
