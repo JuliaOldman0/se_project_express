@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -9,7 +11,10 @@ const { getItems } = require("./controllers/clothingItems");
 const auth = require("./middlewares/auth");
 const errorHandler = require("./middlewares/error-handler");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
-require("dotenv").config();
+const {
+  validateCreateUser,
+  validateLogin,
+} = require("./middlewares/validation");
 
 const { PORT = 3001 } = process.env;
 
@@ -35,15 +40,15 @@ app.get("/crash-test", () => {
   }, 0);
 });
 
-// ✨ Public routes
-app.post("/signup", createUser);
-app.post("/signin", login);
+// Public routes
+app.post("/signup", validateCreateUser, createUser);
+app.post("/signin", validateLogin, login);
 app.get("/items", getItems);
 
-// 🔐 Protect all other routes
+// Protect all other routes
 app.use(auth);
 
-// 🔒 Authenticated routes
+// Authenticated routes
 app.use("/", mainRouter);
 
 app.use(errorLogger);

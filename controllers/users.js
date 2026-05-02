@@ -4,7 +4,6 @@ const User = require("../models/user");
 const { JWT_SECRET } = require("../utils/config");
 
 const BadRequestError = require("../errors/bad-request-error");
-const UnauthorizedError = require("../errors/unauthorized-error");
 const NotFoundError = require("../errors/not-found-error");
 const ConflictError = require("../errors/conflict-error");
 
@@ -105,15 +104,10 @@ const login = (req, res, next) => {
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
         expiresIn: "7d",
       });
+
       return res.send({ token });
     })
-    .catch((err) => {
-      if (err.message === "Incorrect email or password") {
-        return next(new UnauthorizedError("Incorrect email or password"));
-      }
-
-      return next(err);
-    });
+    .catch(next);
 };
 
 module.exports = {
