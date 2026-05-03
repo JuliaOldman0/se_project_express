@@ -6,15 +6,8 @@ const cors = require("cors");
 const { errors } = require("celebrate");
 
 const mainRouter = require("./routes");
-const { createUser, login } = require("./controllers/users");
-const { getItems } = require("./controllers/clothingItems");
-const auth = require("./middlewares/auth");
 const errorHandler = require("./middlewares/error-handler");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
-const {
-  validateCreateUser,
-  validateLogin,
-} = require("./middlewares/validation");
 
 const { PORT = 3001 } = process.env;
 
@@ -40,15 +33,7 @@ app.get("/crash-test", () => {
   }, 0);
 });
 
-// Public routes
-app.post("/signup", validateCreateUser, createUser);
-app.post("/signin", validateLogin, login);
-app.get("/items", getItems);
-
-// Protect all other routes
-app.use(auth);
-
-// Authenticated routes
+// Main routes
 app.use("/", mainRouter);
 
 app.use(errorLogger);
