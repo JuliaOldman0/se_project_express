@@ -25,6 +25,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.1.0",
     "express-winston": "^4.2.0",
+    "js-yaml": "^4.3.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.14.1",
     "validator": "^13.15.35",
